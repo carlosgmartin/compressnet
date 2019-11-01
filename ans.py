@@ -1,29 +1,29 @@
 '''
 
-https://arxiv.org/abs/1311.2540
-https://cs.stackexchange.com/questions/49243/is-there-a-generalization-of-huffman-coding-to-arithmetic-coding
-https://en.wikipedia.org/wiki/Asymmetric_numeral_systems#Range_variants_(rANS)_and_streaming
+Asymmetric numeral systems: entropy coding combining speed of Huffman coding with compression rate of arithmetic coding
 
-https://arxiv.org/abs/1811.08162
-https://theinformaticists.com/2019/03/22/lossless-compression-with-neural-networks/
+    https://arxiv.org/abs/1311.2540
+    https://cs.stackexchange.com/questions/49243/is-there-a-generalization-of-huffman-coding-to-arithmetic-coding
+
+DeepZip: Lossless Data Compression using Recurrent Neural Networks
+
+    https://arxiv.org/abs/1811.08162
+    https://theinformaticists.com/2019/03/22/lossless-compression-with-neural-networks/
 
 '''
 
 import numpy as np
-import math
-from pdb import set_trace
-from itertools import count
 
 
 
-
-initial_model_state = []
-
-def get_model_prediction(model_state):
-    return np.ones(256) / 256
-
-def update_model_state(model_state, symbol):
-    return model_state + [symbol]
+# should cache previous calls for efficiency? (e.g. repeated prefixes)
+def model(prefix):
+    if len(prefix) > 0 and prefix[-1] == ord('e'):
+        freqs = np.ones(256)
+        return freqs / freqs.sum()
+    else:
+        freqs = np.ones(256) + np.eye(256)[3]
+        return freqs / freqs.sum()
 
 
 
@@ -51,29 +51,21 @@ def D(number, probabilities):
 
 def encode(string):
     # collect predictions made by the model for every string prefix
-    model_state = initial_model_state
-    predictions = []
-    for symbol in string:
-        predictions.append(get_model_prediction(model_state))
-        model_state = update_model_state(model_state, symbol)
-
     number = 1
-    for symbol, prediction in zip(string[::-1], predictions[::-1]):
-        number = C(number, symbol, prediction)
+    for i in reversed(range(len(string))):
+        number = C(number, string[i], model(string[:i]))
     return number
 
 def decode(number):
     string = []
-    model_state = initial_model_state
     while True:
-        symbol, number = D(number, get_model_prediction(model_state))
-        model_state = update_model_state(model_state, symbol)
-        string.append(symbol)
+        symbol, number = D(number, model(string))
         if symbol == 0: # null terminator
             break
+        string.append(symbol)
     return string
 
 while True:
-    encoding = encode(list(map(ord, input('Input:    ')))) # input is automatically null-terminated
+    encoding = encode(list(map(ord, input('Input:    '))) + [0]) # null-terminated
     print('Encoding: {}'.format(encoding))
     print('Decoding: {}\n'.format(''.join(map(chr, decode(encoding)))))
