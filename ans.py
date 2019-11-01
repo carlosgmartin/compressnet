@@ -14,16 +14,16 @@ DeepZip: Lossless Data Compression using Recurrent Neural Networks
 
 import numpy as np
 
-
-
-# should cache previous calls for efficiency? (e.g. repeated prefixes)
 def model(prefix):
     if len(prefix) > 0 and prefix[-1] == ord('e'):
-        freqs = np.ones(256)
+        # more likely to be followed by another e
+        freqs = np.ones(256) + np.eye(256)[ord('e')]
         return freqs / freqs.sum()
     else:
-        freqs = np.ones(256) + np.eye(256)[3]
+        freqs = np.ones(256)
         return freqs / freqs.sum()
+
+
 
 
 
@@ -50,7 +50,6 @@ def D(number, probabilities):
     return symbol, numerators[symbol] * q + r - numerators_accum[symbol]
 
 def encode(string):
-    # collect predictions made by the model for every string prefix
     number = 1
     for i in reversed(range(len(string))):
         number = C(number, string[i], model(string[:i]))
