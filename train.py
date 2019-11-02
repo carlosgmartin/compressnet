@@ -16,17 +16,17 @@ class Model(torch.nn.Module):
         self.lstm = torch.nn.LSTM(
             num_layers=2,
             input_size=256, 
-            hidden_size=512,
+            hidden_size=128,
             dropout=.1
         )
         self.outnet = torch.nn.Sequential(
             torch.nn.Linear(
-                in_features=512,
-                out_features=512
+                in_features=128,
+                out_features=128
             ),
             torch.nn.ReLU(),
             torch.nn.Linear(
-                in_features=512,
+                in_features=128,
                 out_features=256
             ),
         )
@@ -38,22 +38,25 @@ if __name__ == '__main__':
     batch_size = 5
 
     model = Model()
-    if len(sys.argv) > 1:
-        # load existing model from file
-        model_path = sys.argv[1]
-        model.load_state_dict(torch.load(model_path))
-    else:
-        # create a new model
-        model_path = 'models/{}'.format(datetime.now())
-
     optimizer = torch.optim.Adam(model.parameters())
 
-    corpus = '\n\n'.join(open(path).read() for path in glob('iliad/*'))
+    try:
+        # load from specified file
+        checkpoint = torch.load(sys.argv[1])
+        model.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+    except FileNotFoundError:
+        pass
+
+    corpus = open('iliad.txt').read()
 
     for iteration in count():
 
         if iteration % 5 == 0:
-            torch.save(model.state_dict(), model_path)
+            torch.save({
+                'model': model.state_dict(), 
+                'optimizer': optimizer.state_dict()
+            }, sys.argv[1])
 
         indices = torch.randint(len(corpus) - 100, size=(batch_size,))
         passages = [corpus[index:index + 100] for index in indices]
