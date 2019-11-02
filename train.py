@@ -1,6 +1,7 @@
 '''
 https://www.jessicayung.com/lstms-for-time-series-in-pytorch/
 https://github.com/pytorch/examples/blob/master/time_sequence_prediction/train.py
+https://machinelearningmastery.com/models-sequence-prediction-recurrent-neural-networks/
 '''
 
 import sys
@@ -10,7 +11,7 @@ from glob import glob
 from pdb import set_trace
 from datetime import datetime
 
-class Model(torch.nn.Module):
+class LSTMModel(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.lstm = torch.nn.LSTM(
@@ -33,11 +34,14 @@ class Model(torch.nn.Module):
     def forward(self, x):
         return self.outnet(self.lstm(torch.eye(256)[x])[0])
 
+class FixedPrefixModel(torch.nn.Module):
+    pass
+
 if __name__ == '__main__':
 
     batch_size = 5
 
-    model = Model()
+    model = LSTMModel()
     optimizer = torch.optim.Adam(model.parameters())
 
     try:
@@ -67,7 +71,7 @@ if __name__ == '__main__':
         inputs = symbols[:-1]
         outputs = model(inputs)
         loss = torch.nn.functional.cross_entropy(outputs.flatten(0, 1), targets.flatten(0, 1))
-        print('iteration {} loss: {}'.format(iteration, loss.item()))
+        print('loss: {}'.format(loss.item()))
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

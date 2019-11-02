@@ -17,7 +17,7 @@ http://classics.mit.edu/Homer/odyssey.html
 
 '''
 
-from train import Model
+from train import LSTMModel
 import torch
 import sys
 import numpy as np
@@ -78,7 +78,7 @@ def ppm_model(prefix, table=ppm(corpus, 8), order=8):
 
 
 
-model = Model()
+model = LSTMModel()
 model.load_state_dict(torch.load(sys.argv[1])['model'])
 model.eval()
 
