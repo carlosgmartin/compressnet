@@ -14,24 +14,31 @@ Example text: http://classics.mit.edu/Homer/iliad.1.i.html
 
 '''
 
+from train import Model
+import torch
+import sys
 import numpy as np
 from collections import Counter
 from pdb import set_trace
 
 def bad_model(prefix):
     if len(prefix) > 0 and prefix[-1] == ord('e'):
-        # more likely to be followed by another e
+        # say e is more likely to follow an e
         freqs = np.ones(256) + np.eye(256)[ord('e')]
         return freqs / freqs.sum()
     else:
         freqs = np.ones(256)
         return freqs / freqs.sum()
 
+
+
+# train model on example text
 window_size = 2
-corpus = tuple(map(ord, open('iliad book 1').read()))
+corpus = tuple(map(ord, open('iliad/1').read()))
 windows = zip(*(corpus[i:] for i in range(window_size)))
 counter = Counter(windows)
-def good_model(prefix):
+
+def markov_model(prefix):
     if len(prefix) < window_size:
         return np.ones(256) / 256
     else:
@@ -39,6 +46,15 @@ def good_model(prefix):
         return freqs / freqs.sum()
 
 
+
+modelnet = Model()
+modelnet.load_state_dict(torch.load(sys.argv[1]))
+modelnet.eval()
+
+def lstm_model(prefix):
+    if len(prefix) == 0:
+        return np.ones(256) / 256
+    return torch.nn.functional.softmax(modelnet(torch.tensor(prefix, dtype=torch.long)[None].T)[-1, 0], -1).detach().numpy()
 
 
 
@@ -64,7 +80,7 @@ def D(number, probabilities):
 
     q, r = divmod(number, int(denominator))
     symbol = numerators_accum.searchsorted(r, side='right') - 1
-    #symbol = np.where(numerators_accum <= r)[0][-1]
+    # symbol = np.where(numerators_accum <= r)[0][-1]
     return symbol, int(numerators[symbol]) * q + r - int(numerators_accum[symbol])
 
 def encode(string, model):
@@ -86,16 +102,21 @@ def decode(number, model):
 
 if __name__ == '__main__':
 
-    string = open('iliad book 2').read(1000)
+    string = open('iliad/2').read(100)
     
     model = bad_model
     encoding = encode(string, model)
-    print('Encoding with bad model:  {} bits'.format(encoding.bit_length()))
+    print('Encoding with {}: {} bits'.format(model.__name__, encoding.bit_length()))
     assert string == decode(encoding, model)
 
-    model = good_model
+    model = markov_model
     encoding = encode(string, model)
-    print('Encoding with good model: {} bits'.format(encoding.bit_length()))
+    print('Encoding with {}: {} bits'.format(model.__name__, encoding.bit_length()))
+    assert string == decode(encoding, model)
+
+    model = lstm_model
+    encoding = encode(string, model)
+    print('Encoding with {}: {} bits'.format(model.__name__, encoding.bit_length()))
     assert string == decode(encoding, model)
 
     while True:
