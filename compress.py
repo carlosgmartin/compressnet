@@ -50,24 +50,27 @@ if __name__ == '__main__':
     models = (dummy_model_class(), markov_model_class(0), markov_model_class(2), ppm_model_class(8))
 
     symbols = tuple(map(ord, open('iliad.txt').read(100000) + '\0'))
+    print('training...\n' + 'model'.ljust(30) + 'seconds')
     for model in models:
-        print('Training {} '.format(model), end='', flush=True)
+        print(str(model).ljust(30), end='', flush=True)
         start = time()
         model.train(symbols)
-        print('({:.2f} seconds)'.format(time() - start))
+        print('{:.2f}'.format(time() - start))
     print()
 
     symbols = tuple(map(ord, open('odyssey.txt').read(100) + '\0'))
+    print('testing...\n' + 'model'.ljust(30) + 'seconds'.ljust(10) + 'bits')
     for model in models:
-        print(model)
+        print(str(model).ljust(30), end='', flush=True)
         start = time()
         encoding = encode(symbols, model)
-        print('Encoded in {} bits ({:.2f} seconds)\n'.format(encoding.bit_length(), time() - start))
+        print('{:.2f}'.format(time() - start).ljust(10) + '{}'.format(encoding.bit_length()))
         assert symbols == decode(encoding, model)
+    print()
 
     while True:
-        symbols = tuple(map(ord, input('Input: ') + '\0'))
+        symbols = tuple(map(ord, input('input: ') + '\0'))
         start = time()
         encoding = encode(symbols, model)
-        print('Encoded in {} bits ({:.2f} seconds)\n'.format(encoding.bit_length(), time() - start))
+        print('encoded to {} bits ({:.2f} seconds)\n'.format(encoding.bit_length(), time() - start))
         assert symbols == decode(encoding, model)
