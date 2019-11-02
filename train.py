@@ -1,9 +1,3 @@
-'''
-https://www.jessicayung.com/lstms-for-time-series-in-pytorch/
-https://github.com/pytorch/examples/blob/master/time_sequence_prediction/train.py
-https://machinelearningmastery.com/models-sequence-prediction-recurrent-neural-networks/
-'''
-
 import sys
 import torch
 from itertools import count
