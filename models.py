@@ -102,30 +102,49 @@ class rnn_model_class(torch.nn.Module):
         )
 
     def train(self, symbols):
-
         seq_len = 100
         batch_size = 10
+        checkpoint_file = 'model'
 
         optimizer = torch.optim.Adam(self.parameters())
+        iteration = 0
 
-        for iteration in range(10000):
+        try:
+            checkpoint = torch.load(checkpoint_file)
+            self.load_state_dict(checkpoint['model'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            iteration = checkpoint['iteration']
+        except FileNotFoundError:
+            # checkpoint file has not been created yet
+            pass
 
-            indices = torch.randint(len(symbols) - seq_len - 1, size=(batch_size,))
-            sequences = torch.tensor([symbols[index:index + seq_len + 1] for index in indices]).T
+        try:
+            while True:
+                if iteration % 10 == 0:
+                    torch.save({
+                        'iteration': iteration,
+                        'model': self.state_dict(),
+                        'optimizer': optimizer.state_dict()
+                    }, checkpoint_file)
 
-            inputs = torch.eye(256)[sequences[:-1]]
-            targets = sequences[1:]
+                indices = torch.randint(len(symbols) - seq_len - 1, size=(batch_size,))
+                sequences = torch.tensor([symbols[index:index + seq_len + 1] for index in indices]).T
 
-            outputs = self.out(self.gru(inputs)[0])
+                inputs = torch.eye(256)[sequences[:-1]]
+                targets = sequences[1:]
 
-            loss = torch.nn.functional.cross_entropy(outputs.flatten(0, 1), targets.flatten(0, 1))
-            print('\r\x1b[2K\x1b[2m' + 'iteration {} loss: {:.4f}'.format(iteration, loss.item()) + '\x1b[0m', end='', flush=True)
+                outputs = self.out(self.gru(inputs)[0])
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                loss = torch.nn.functional.cross_entropy(outputs.flatten(0, 1), targets.flatten(0, 1))
+                print('\r\x1b[2K\x1b[2m' + 'iteration {} loss: {:.4f} (Ctrl-C to stop)'.format(iteration, loss.item()) + '\x1b[0m', end='', flush=True)
 
-        print()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                iteration += 1
+        except KeyboardInterrupt:
+            print()
 
     def reset(self):
         self.hidden_state = torch.zeros((self.gru.num_layers, 1, self.gru.hidden_size))
