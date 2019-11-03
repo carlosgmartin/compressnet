@@ -49,18 +49,18 @@ def decode(number, model):
 
 if __name__ == '__main__':
 
-    models = (rnn_model_class(), dummy_model_class(), markov_model_class(0), markov_model_class(2), ppm_model_class(8))
+    models = (dummy_model_class(), markov_model_class(0), markov_model_class(2), ppm_model_class(8), rnn_model_class())
 
-    symbols = tuple(map(ord, open('iliad.txt').read(100000) + '\0'))
-    print('training...\n' + 'model'.ljust(30) + 'seconds')
+    symbols = tuple(map(ord, open('iliad.txt').read(100000) + chr(0))) # null terminated
+    print('training models...\n' + 'model'.ljust(30) + 'seconds')
     for model in models:
         start = time()
         model.train(symbols)
         print(str(model).ljust(30) + '{:.2f}'.format(time() - start))
     print()
 
-    symbols = tuple(map(ord, open('odyssey.txt').read(1000) + '\0'))
-    print('testing...\n' + 'model'.ljust(30) + 'seconds'.ljust(10) + 'bits')
+    symbols = tuple(map(ord, open('odyssey.txt').read(1000) + chr(0))) # null terminated
+    print('testing models...\n' + 'model'.ljust(30) + 'seconds'.ljust(10) + 'bits')
     for model in models:
         start = time()
         encoding = encode(symbols, model)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     print()
 
     while True:
-        symbols = tuple(map(ord, input('input: ') + '\0'))
+        symbols = tuple(map(ord, input('input: ') + chr(0))) # null terminated
         start = time()
         encoding = encode(symbols, model)
         print('encoded to {} bits in {:.2f} seconds\n'.format(encoding.bit_length(), time() - start))
