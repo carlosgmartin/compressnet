@@ -104,7 +104,7 @@ class rnn_model_class(torch.nn.Module):
     def train(self, symbols):
         seq_len = 100
         batch_size = 10
-        checkpoint_file = 'model'
+        checkpoint_file = 'checkpoint'
 
         optimizer = torch.optim.Adam(self.parameters())
         iteration = 0
@@ -120,7 +120,7 @@ class rnn_model_class(torch.nn.Module):
 
         try:
             while True:
-                if iteration % 10 == 0:
+                if iteration % 100 == 0:
                     torch.save({
                         'iteration': iteration,
                         'model': self.state_dict(),
@@ -136,13 +136,14 @@ class rnn_model_class(torch.nn.Module):
                 outputs = self.out(self.gru(inputs)[0])
 
                 loss = torch.nn.functional.cross_entropy(outputs.flatten(0, 1), targets.flatten(0, 1))
-                print('\r\x1b[2K\x1b[2m' + 'iteration {} loss: {:.4f} (Ctrl-C to stop)'.format(iteration, loss.item()) + '\x1b[0m', end='', flush=True)
+                print('\r\x1b[2K\x1b[2m' + 'iteration {} loss: {:.4f} (Ctrl-C to stop training)'.format(iteration, loss.item()) + '\x1b[0m', end='', flush=True)
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
                 iteration += 1
+
         except KeyboardInterrupt:
             print()
 
