@@ -103,13 +103,14 @@ class rnn_model_class(torch.nn.Module):
 
     def train(self, symbols):
 
-        seq_len = 42
+        seq_len = 100
+        batch_size = 10
 
         optimizer = torch.optim.Adam(self.parameters())
 
-        for iteration in range(100):
+        for iteration in range(10000):
 
-            indices = torch.randint(len(symbols) - seq_len - 1, size=(10,))
+            indices = torch.randint(len(symbols) - seq_len - 1, size=(batch_size,))
             sequences = torch.tensor([symbols[index:index + seq_len + 1] for index in indices]).T
 
             inputs = torch.eye(256)[sequences[:-1]]
@@ -118,11 +119,13 @@ class rnn_model_class(torch.nn.Module):
             outputs = self.out(self.gru(inputs)[0])
 
             loss = torch.nn.functional.cross_entropy(outputs.flatten(0, 1), targets.flatten(0, 1))
-            #print(str(iteration).ljust(10) + str(loss.item()))
+            print('\r\x1b[2K\x1b[2m' + 'iteration {} loss: {:.4f}'.format(iteration, loss.item()) + '\x1b[0m', end='', flush=True)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+        print()
 
     def reset(self):
         self.hidden_state = torch.zeros((self.gru.num_layers, 1, self.gru.hidden_size))
@@ -133,8 +136,8 @@ class rnn_model_class(torch.nn.Module):
     def observe(self, symbol):
         self.hidden_state = self.gru(torch.eye(256)[symbol][None, None, :], self.hidden_state)[1]
 
-    def predict_all(self, symbols):
-        # WARNING: may not end up with exactly the same floating point values as using predict-observe repeatedly
+    def predict_all_(self, symbols):
+        # WARNING: may not end up with exactly the same floating point values as applying predict-observe over the symbol sequence
         prediction = self.predict()
         output, self.hidden_state = self.gru(torch.eye(256)[torch.tensor(symbols)][:, None, :], self.hidden_state)
         return (prediction,) + tuple(self.out(output)[:, 0, :].softmax(-1).detach().numpy())
