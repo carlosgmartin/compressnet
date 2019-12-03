@@ -102,9 +102,9 @@ class rnn_model_class(torch.nn.Module):
         )
 
     def train(self, symbols):
+        checkpoint_file = 'checkpoint'
         seq_len = 100
         batch_size = 10
-        checkpoint_file = 'checkpoint'
 
         optimizer = torch.optim.Adam(self.parameters())
         iteration = 0

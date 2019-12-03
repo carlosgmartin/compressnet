@@ -1,6 +1,7 @@
 import numpy as np
 from time import time
 from models import dummy_model_class, markov_model_class, ppm_model_class, rnn_model_class
+from sys import argv
 
 def C(number, symbol, probabilities):
     # quantize probabilities
@@ -49,18 +50,25 @@ def decode(number, model):
 
 if __name__ == '__main__':
 
-    models = (dummy_model_class(), markov_model_class(0), markov_model_class(2), ppm_model_class(8), rnn_model_class())
+    if len(argv) < 3:
+        print('usage: python3 {} [train file] [test file]'.format(argv[0]))
+        exit()
 
-    symbols = tuple(map(ord, open('iliad.txt').read(100000) + chr(0))) # null terminated
-    print('training models...\n' + 'model'.ljust(30) + 'seconds')
+    train_file = argv[1]
+    test_file = argv[2]
+    
+    models = (dummy_model_class(), *(markov_model_class(i) for i in range(4)), *(ppm_model_class(i) for i in [4, 6, 8]), rnn_model_class())
+
+    symbols = tuple(map(ord, open(train_file).read() + chr(0))) # null terminated
+    print('training models on {}...\n'.format(train_file) + 'model'.ljust(30) + 'seconds')
     for model in models:
         start = time()
         model.train(symbols)
         print(str(model).ljust(30) + '{:.2f}'.format(time() - start))
     print()
 
-    symbols = tuple(map(ord, open('odyssey.txt').read(1000) + chr(0))) # null terminated
-    print('testing models...\n' + 'model'.ljust(30) + 'seconds'.ljust(10) + 'bits')
+    symbols = tuple(map(ord, open(test_file).read(1000) + chr(0))) # null terminated
+    print('testing models on {}...\n'.format(test_file) + 'model'.ljust(30) + 'seconds'.ljust(10) + 'bits')
     for model in models:
         start = time()
         encoding = encode(symbols, model)
